@@ -40,6 +40,7 @@
             background: #f8f9fa;
             border-radius: 10px;
             padding: 5px;
+            flex-wrap: wrap;
         }
         
         .tab {
@@ -52,6 +53,7 @@
             cursor: pointer;
             font-weight: bold;
             transition: all 0.3s ease;
+            min-width: 120px;
         }
         
         .tab.active {
@@ -154,6 +156,11 @@
             background: #dc3545;
         }
         
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        
         .btn-sm {
             padding: 8px 15px;
             font-size: 14px;
@@ -251,19 +258,38 @@
             font-size: 14px;
         }
         
+        .number-tag.multiple {
+            background: #e74c3c;
+        }
+        
         .number-tag .remove {
             cursor: pointer;
             font-weight: bold;
+            margin-left: 5px;
+        }
+        
+        .number-tag .quantity {
+            background: rgba(255,255,255,0.3);
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 5px;
+            font-size: 12px;
         }
         
         .number-input-group {
             display: flex;
             gap: 10px;
+            align-items: center;
         }
         
         .number-input {
             flex: 1;
             max-width: 120px;
+        }
+        
+        .quantity-input {
+            flex: 1;
+            max-width: 80px;
         }
         
         .empty-state {
@@ -308,6 +334,77 @@
             border-radius: 5px;
             border-left: 3px solid #28a745;
         }
+
+        .area-selector {
+            margin-bottom: 20px;
+        }
+
+        .area-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .area-controls .btn {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .areas-list {
+            margin-top: 20px;
+        }
+
+        .area-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .area-item:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .area-item.active {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .area-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .area-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .area-streets-count {
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .area-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .current-area-badge {
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 14px;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
@@ -315,55 +412,95 @@
         <h1>🚚 Otimizador de Rotas - Entregador</h1>
         
         <div class="tab-container">
-            <button class="tab active" onclick="switchTab(0)">📍 Configurar Ruas</button>
-            <button class="tab" onclick="switchTab(1)">📦 Fazer Entregas</button>
-            <button class="tab" onclick="switchTab(2)">💾 Dados Salvos</button>
+            <button class="tab active" onclick="switchTab(0)">📍 Áreas</button>
+            <button class="tab" onclick="switchTab(1)">🛣️ Ruas da Área</button>
+            <button class="tab" onclick="switchTab(2)">📦 Entregas</button>
+            <button class="tab" onclick="switchTab(3)">💾 Dados</button>
         </div>
         
         <div id="alert" class="alert"></div>
         
-        <!-- Tab 1: Configurar Ordem das Ruas -->
+        <!-- Tab 1: Gerenciar Áreas -->
         <div class="tab-content active" id="tab1">
             <div class="instructions">
-                <h3>Como configurar a ordem das ruas:</h3>
+                <h3>Gerenciar Áreas de Entrega:</h3>
                 <ul>
-                    <li>Digite as ruas na ordem que você normalmente percorre</li>
-                    <li>Separe cada rua por vírgula</li>
-                    <li>Os dados são salvos automaticamente no seu celular</li>
-                    <li>Exemplo: <em>Rua A, Rua B, Rua C, Avenida Principal</em></li>
+                    <li>Crie diferentes áreas (ex: Vila Real, Jaqueira, Centro)</li>
+                    <li>Cada área tem sua própria ordem de ruas</li>
+                    <li>Selecione a área atual para trabalhar</li>
                 </ul>
             </div>
-            
-            <div class="form-group">
-                <label for="streets">Ordem das Ruas (separadas por vírgula):</label>
-                <textarea id="streets" placeholder="Exemplo: Rua A, Rua B, Rua C, Avenida Principal"></textarea>
-            </div>
-            
-            <button class="btn" onclick="saveStreets()">💾 Salvar Ordem das Ruas</button>
 
-            <div class="saved-streets-list" id="savedStreetsList" style="display: none;">
-                <h4>🔄 Ruas Salvas Atualmente:</h4>
-                <div id="currentStreetsList"></div>
+            <div id="currentAreaBadge" class="current-area-badge" style="display: none;"></div>
+
+            <div class="area-controls">
+                <input type="text" id="newAreaName" placeholder="Nome da nova área (ex: Vila Real)" class="btn-secondary" style="background: white; color: #333;">
+                <button class="btn btn-success" onclick="createNewArea()">➕ Nova Área</button>
+            </div>
+
+            <div class="areas-list" id="areasList">
+                <div class="empty-state">
+                    <div>🏘️</div>
+                    <p>Nenhuma área criada</p>
+                    <small>Crie sua primeira área para começar</small>
+                </div>
             </div>
         </div>
         
-        <!-- Tab 2: Fazer Entregas -->
+        <!-- Tab 2: Configurar Ruas da Área -->
         <div class="tab-content" id="tab2">
             <div class="instructions">
-                <h3>Como adicionar entregas:</h3>
+                <h3>Configurar ordem das ruas para a área selecionada:</h3>
                 <ul>
-                    <li>Selecione uma rua da sua lista pré-salvada</li>
-                    <li>Digite os números das casas para entregar</li>
-                    <li>Clique em "Adicionar Número" para cada endereço</li>
-                    <li>Repita para todas as ruas com entregas</li>
+                    <li>Digite as ruas na ordem que você normalmente percorre</li>
+                    <li>Separe cada rua por vírgula</li>
+                    <li>Os dados são salvos automaticamente</li>
                 </ul>
             </div>
 
-            <div id="noStreetsAlert" class="alert alert-warning" style="display: none;">
-                ⚠️ Você precisa configurar as ruas primeiro na aba "Configurar Ruas"
+            <div id="noAreaAlert" class="alert alert-warning" style="display: none;">
+                ⚠️ Selecione uma área primeiro na aba "Áreas"
+            </div>
+
+            <div id="areaConfigInterface" style="display: none;">
+                <div class="current-area-badge" id="currentAreaConfigBadge"></div>
+            
+                <div class="form-group">
+                    <label for="streets">Ordem das Ruas (separadas por vírgula):</label>
+                    <textarea id="streets" placeholder="Exemplo: Rua A, Rua B, Rua C, Avenida Principal"></textarea>
+                </div>
+                
+                <button class="btn" onclick="saveStreets()">💾 Salvar Ordem das Ruas</button>
+
+                <div class="saved-streets-list" id="savedStreetsList" style="display: none;">
+                    <h4>🔄 Ruas Salvas Atualmente:</h4>
+                    <div id="currentStreetsList"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab 3: Fazer Entregas -->
+        <div class="tab-content" id="tab3">
+            <div class="instructions">
+                <h3>Adicionar entregas para a área atual:</h3>
+                <ul>
+                    <li>Selecione uma rua da área atual</li>
+                    <li>Digite o número e quantidade de pacotes</li>
+                    <li>Clique em "Adicionar" para cada endereço</li>
+                </ul>
+            </div>
+
+            <div id="noAreaForDeliveryAlert" class="alert alert-warning" style="display: none;">
+                ⚠️ Selecione uma área primeiro na aba "Áreas"
+            </div>
+
+            <div id="noStreetsForDeliveryAlert" class="alert alert-warning" style="display: none;">
+                ⚠️ Configure as ruas desta área primeiro na aba "Ruas da Área"
             </div>
 
             <div id="deliveryInterface" style="display: none;">
+                <div class="current-area-badge" id="currentAreaDeliveryBadge"></div>
+
                 <div class="street-selector">
                     <label for="streetSelect">Selecione uma rua:</label>
                     <select id="streetSelect">
@@ -372,11 +509,13 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="numberInput">Número da residência:</label>
+                    <label>Número da residência e quantidade:</label>
                     <div class="number-input-group">
-                        <input type="number" id="numberInput" placeholder="Ex: 123" class="number-input">
-                        <button class="btn btn-success btn-sm" onclick="addNumber()">➕ Adicionar Número</button>
+                        <input type="number" id="numberInput" placeholder="Número" class="number-input">
+                        <input type="number" id="quantityInput" placeholder="Qtd" class="quantity-input" value="1" min="1">
+                        <button class="btn btn-success btn-sm" onclick="addDelivery()">➕ Adicionar</button>
                     </div>
+                    <small style="color: #666;">Quantidade padrão: 1 pacote</small>
                 </div>
 
                 <div class="selected-streets">
@@ -394,21 +533,21 @@
             </div>
         </div>
 
-        <!-- Tab 3: Dados Salvos -->
-        <div class="tab-content" id="tab3">
+        <!-- Tab 4: Dados Salvos -->
+        <div class="tab-content" id="tab4">
             <div class="instructions">
-                <h3>Seus dados salvos localmente:</h3>
-                <p>Todos os dados ficam armazenados no seu próprio celular/computador.</p>
+                <h3>Gerenciar dados salvos:</h3>
+                <p>Todos os dados ficam armazenados no seu próprio dispositivo.</p>
             </div>
 
             <div class="storage-info">
-                <strong>📊 Status do Armazenamento Local:</strong>
+                <strong>📊 Status do Armazenamento:</strong>
                 <div id="storageStatus">Carregando...</div>
             </div>
 
             <div class="form-group">
                 <label>Exportar dados para backup:</label>
-                <button class="btn" onclick="exportData()">📥 Exportar Dados</button>
+                <button class="btn" onclick="exportData()">📥 Exportar Todos os Dados</button>
             </div>
 
             <div class="form-group">
@@ -419,7 +558,7 @@
 
             <div class="form-group">
                 <label>Limpar todos os dados:</label>
-                <button class="btn btn-danger" onclick="clearAllData()">🗑️ Limpar Todos os Dados</button>
+                <button class="btn btn-danger" onclick="clearAllData()">🗑️ Limpar Tudo</button>
             </div>
         </div>
     </div>
@@ -427,30 +566,50 @@
     <script>
         // Chaves para localStorage
         const STORAGE_KEYS = {
-            STREETS: 'route_optimizer_streets',
-            DELIVERIES: 'route_optimizer_deliveries',
-            SETTINGS: 'route_optimizer_settings'
+            AREAS: 'route_optimizer_areas',
+            CURRENT_AREA: 'route_optimizer_current_area',
+            DELIVERIES: 'route_optimizer_deliveries'
         };
 
         // Estado da aplicação
         const appState = {
-            streets: [],
-            deliveries: {},
-            currentStreet: ''
+            areas: {}, // { areaId: { name: string, streets: string[] } }
+            currentAreaId: null,
+            deliveries: {} // { areaId: { street: { number: quantity } } }
         };
 
         // Elementos DOM
         const elements = {
+            // Tab 1: Áreas
+            newAreaName: document.getElementById('newAreaName'),
+            areasList: document.getElementById('areasList'),
+            currentAreaBadge: document.getElementById('currentAreaBadge'),
+            
+            // Tab 2: Config Ruas
+            noAreaAlert: document.getElementById('noAreaAlert'),
+            areaConfigInterface: document.getElementById('areaConfigInterface'),
+            streets: document.getElementById('streets'),
+            savedStreetsList: document.getElementById('savedStreetsList'),
+            currentStreetsList: document.getElementById('currentStreetsList'),
+            currentAreaConfigBadge: document.getElementById('currentAreaConfigBadge'),
+            
+            // Tab 3: Entregas
+            noAreaForDeliveryAlert: document.getElementById('noAreaForDeliveryAlert'),
+            noStreetsForDeliveryAlert: document.getElementById('noStreetsForDeliveryAlert'),
+            deliveryInterface: document.getElementById('deliveryInterface'),
             streetSelect: document.getElementById('streetSelect'),
             numberInput: document.getElementById('numberInput'),
+            quantityInput: document.getElementById('quantityInput'),
             deliveriesList: document.getElementById('deliveriesList'),
-            noStreetsAlert: document.getElementById('noStreetsAlert'),
-            deliveryInterface: document.getElementById('deliveryInterface'),
-            savedStreetsList: document.getElementById('savedStreetsList'),
-            currentStreetsList: document.getElementById('currentStreetsList')
+            currentAreaDeliveryBadge: document.getElementById('currentAreaDeliveryBadge'),
+            
+            // Tab 4: Resultados
+            result: document.getElementById('result'),
+            routeList: document.getElementById('routeList')
         };
 
-        // Inicialização
+        // ========== INICIALIZAÇÃO ==========
+
         document.addEventListener('DOMContentLoaded', function() {
             loadAllData();
             updateStorageStatus();
@@ -459,34 +618,28 @@
         // ========== FUNÇÕES DE GERENCIAMENTO DE DADOS ==========
 
         function loadAllData() {
-            loadStreets();
+            loadAreas();
             loadDeliveries();
         }
 
-        function loadStreets() {
+        function loadAreas() {
             try {
-                const saved = localStorage.getItem(STORAGE_KEYS.STREETS);
-                if (saved) {
-                    appState.streets = JSON.parse(saved);
-                    updateStreetSelect();
-                    updateSavedStreetsList();
-                    
-                    if (appState.streets.length === 0) {
-                        elements.noStreetsAlert.style.display = 'block';
-                        elements.deliveryInterface.style.display = 'none';
-                        elements.savedStreetsList.style.display = 'none';
-                    } else {
-                        elements.noStreetsAlert.style.display = 'none';
-                        elements.deliveryInterface.style.display = 'block';
-                        elements.savedStreetsList.style.display = 'block';
-                    }
-                } else {
-                    elements.noStreetsAlert.style.display = 'block';
-                    elements.deliveryInterface.style.display = 'none';
-                    elements.savedStreetsList.style.display = 'none';
+                const savedAreas = localStorage.getItem(STORAGE_KEYS.AREAS);
+                const savedCurrentArea = localStorage.getItem(STORAGE_KEYS.CURRENT_AREA);
+                
+                if (savedAreas) {
+                    appState.areas = JSON.parse(savedAreas);
                 }
+                
+                if (savedCurrentArea) {
+                    appState.currentAreaId = savedCurrentArea;
+                }
+                
+                updateAreasList();
+                updateCurrentAreaBadge();
+                updateAreaDependentInterfaces();
             } catch (error) {
-                console.error('Erro ao carregar ruas:', error);
+                console.error('Erro ao carregar áreas:', error);
             }
         }
 
@@ -495,18 +648,18 @@
                 const saved = localStorage.getItem(STORAGE_KEYS.DELIVERIES);
                 if (saved) {
                     appState.deliveries = JSON.parse(saved);
-                    updateDeliveriesList();
                 }
             } catch (error) {
                 console.error('Erro ao carregar entregas:', error);
             }
         }
 
-        function saveStreetsToStorage() {
+        function saveAreasToStorage() {
             try {
-                localStorage.setItem(STORAGE_KEYS.STREETS, JSON.stringify(appState.streets));
+                localStorage.setItem(STORAGE_KEYS.AREAS, JSON.stringify(appState.areas));
+                localStorage.setItem(STORAGE_KEYS.CURRENT_AREA, appState.currentAreaId);
             } catch (error) {
-                console.error('Erro ao salvar ruas:', error);
+                console.error('Erro ao salvar áreas:', error);
             }
         }
 
@@ -518,63 +671,206 @@
             }
         }
 
-        // ========== FUNÇÕES DA INTERFACE ==========
+        // ========== GERENCIAMENTO DE ÁREAS ==========
 
-        function switchTab(tabIndex) {
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        function createNewArea() {
+            const areaName = elements.newAreaName.value.trim();
             
-            document.querySelectorAll('.tab')[tabIndex].classList.add('active');
-            document.querySelectorAll('.tab-content')[tabIndex].classList.add('active');
-
-            if (tabIndex === 0) {
-                loadSavedStreets();
-            } else if (tabIndex === 1) {
-                loadStreets();
-            } else if (tabIndex === 2) {
-                updateStorageStatus();
-            }
-        }
-
-        function showAlert(message, type) {
-            const alert = document.getElementById('alert');
-            alert.textContent = message;
-            alert.className = `alert alert-${type}`;
-            alert.style.display = 'block';
-            
-            setTimeout(() => {
-                alert.style.display = 'none';
-            }, 5000);
-        }
-
-        function updateStreetSelect() {
-            elements.streetSelect.innerHTML = '<option value="">-- Selecione uma rua --</option>';
-            appState.streets.forEach(street => {
-                const option = document.createElement('option');
-                option.value = street;
-                option.textContent = street;
-                elements.streetSelect.appendChild(option);
-            });
-        }
-
-        function updateSavedStreetsList() {
-            if (appState.streets.length === 0) {
-                elements.currentStreetsList.innerHTML = '<p>Nenhuma rua salva</p>';
+            if (!areaName) {
+                showAlert('Por favor, digite um nome para a área.', 'warning');
                 return;
             }
             
-            elements.currentStreetsList.innerHTML = appState.streets.map(street => 
-                `<div class="saved-street-item">${street}</div>`
-            ).join('');
+            const areaId = 'area_' + Date.now();
+            
+            appState.areas[areaId] = {
+                name: areaName,
+                streets: []
+            };
+            
+            // Define como área atual
+            appState.currentAreaId = areaId;
+            
+            saveAreasToStorage();
+            updateAreasList();
+            updateCurrentAreaBadge();
+            updateAreaDependentInterfaces();
+            
+            elements.newAreaName.value = '';
+            showAlert(`Área "${areaName}" criada com sucesso!`, 'success');
+            
+            // Vai para a aba de configuração de ruas
+            switchTab(1);
         }
 
+        function selectArea(areaId) {
+            appState.currentAreaId = areaId;
+            saveAreasToStorage();
+            updateAreasList();
+            updateCurrentAreaBadge();
+            updateAreaDependentInterfaces();
+            showAlert(`Área "${appState.areas[areaId].name}" selecionada!`, 'success');
+        }
+
+        function deleteArea(areaId, areaName) {
+            if (!confirm(`Tem certeza que deseja excluir a área "${areaName}"?\n\nEsta ação não pode ser desfeita.`)) {
+                return;
+            }
+            
+            // Remove a área
+            delete appState.areas[areaId];
+            
+            // Remove entregas da área
+            if (appState.deliveries[areaId]) {
+                delete appState.deliveries[areaId];
+            }
+            
+            // Se era a área atual, seleciona outra ou limpa
+            if (appState.currentAreaId === areaId) {
+                const remainingAreas = Object.keys(appState.areas);
+                appState.currentAreaId = remainingAreas.length > 0 ? remainingAreas[0] : null;
+            }
+            
+            saveAreasToStorage();
+            saveDeliveriesToStorage();
+            updateAreasList();
+            updateCurrentAreaBadge();
+            updateAreaDependentInterfaces();
+            
+            showAlert(`Área "${areaName}" excluída!`, 'success');
+        }
+
+        function updateAreasList() {
+            const areas = Object.entries(appState.areas);
+            
+            if (areas.length === 0) {
+                elements.areasList.innerHTML = `
+                    <div class="empty-state">
+                        <div>🏘️</div>
+                        <p>Nenhuma área criada</p>
+                        <small>Crie sua primeira área para começar</small>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            for (const [areaId, area] of areas) {
+                const isActive = areaId === appState.currentAreaId;
+                const streetsCount = area.streets.length;
+                
+                html += `
+                    <div class="area-item ${isActive ? 'active' : ''}" onclick="selectArea('${areaId}')">
+                        <div class="area-header">
+                            <div>
+                                <div class="area-name">${area.name}</div>
+                                <div class="area-streets-count">${streetsCount} rua${streetsCount !== 1 ? 's' : ''} configurada${streetsCount !== 1 ? 's' : ''}</div>
+                            </div>
+                            <div class="area-actions">
+                                <button class="btn btn-warning btn-sm" onclick="event.stopPropagation(); renameArea('${areaId}')">✏️</button>
+                                <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteArea('${areaId}', '${area.name}')">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            elements.areasList.innerHTML = html;
+        }
+
+        function renameArea(areaId) {
+            const newName = prompt('Novo nome para a área:', appState.areas[areaId].name);
+            if (newName && newName.trim()) {
+                appState.areas[areaId].name = newName.trim();
+                saveAreasToStorage();
+                updateAreasList();
+                updateCurrentAreaBadge();
+                showAlert('Nome da área atualizado!', 'success');
+            }
+        }
+
+        function updateCurrentAreaBadge() {
+            if (appState.currentAreaId && appState.areas[appState.currentAreaId]) {
+                const areaName = appState.areas[appState.currentAreaId].name;
+                elements.currentAreaBadge.textContent = `Área Atual: ${areaName}`;
+                elements.currentAreaBadge.style.display = 'inline-block';
+            } else {
+                elements.currentAreaBadge.style.display = 'none';
+            }
+        }
+
+        function updateAreaDependentInterfaces() {
+            const hasAreas = Object.keys(appState.areas).length > 0;
+            const hasCurrentArea = appState.currentAreaId && appState.areas[appState.currentAreaId];
+            
+            // Tab 2: Configuração de Ruas
+            if (!hasCurrentArea) {
+                elements.noAreaAlert.style.display = 'block';
+                elements.areaConfigInterface.style.display = 'none';
+            } else {
+                elements.noAreaAlert.style.display = 'none';
+                elements.areaConfigInterface.style.display = 'block';
+                const areaName = appState.areas[appState.currentAreaId].name;
+                elements.currentAreaConfigBadge.textContent = `Área: ${areaName}`;
+                loadSavedStreets();
+            }
+            
+            // Tab 3: Entregas
+            if (!hasCurrentArea) {
+                elements.noAreaForDeliveryAlert.style.display = 'block';
+                elements.noStreetsForDeliveryAlert.style.display = 'none';
+                elements.deliveryInterface.style.display = 'none';
+            } else {
+                elements.noAreaForDeliveryAlert.style.display = 'none';
+                const currentArea = appState.areas[appState.currentAreaId];
+                const hasStreets = currentArea.streets.length > 0;
+                
+                if (!hasStreets) {
+                    elements.noStreetsForDeliveryAlert.style.display = 'block';
+                    elements.deliveryInterface.style.display = 'none';
+                } else {
+                    elements.noStreetsForDeliveryAlert.style.display = 'none';
+                    elements.deliveryInterface.style.display = 'block';
+                    const areaName = appState.areas[appState.currentAreaId].name;
+                    elements.currentAreaDeliveryBadge.textContent = `Área: ${areaName}`;
+                    updateStreetSelect();
+                    updateDeliveriesList();
+                }
+            }
+        }
+
+        // ========== CONFIGURAÇÃO DE RUAS ==========
+
         function loadSavedStreets() {
-            document.getElementById('streets').value = appState.streets.join(', ');
-            updateSavedStreetsList();
+            if (appState.currentAreaId && appState.areas[appState.currentAreaId]) {
+                const streets = appState.areas[appState.currentAreaId].streets;
+                elements.streets.value = streets.join(', ');
+                updateSavedStreetsList();
+            }
+        }
+
+        function updateSavedStreetsList() {
+            if (appState.currentAreaId && appState.areas[appState.currentAreaId]) {
+                const streets = appState.areas[appState.currentAreaId].streets;
+                
+                if (streets.length === 0) {
+                    elements.currentStreetsList.innerHTML = '<p>Nenhuma rua salva</p>';
+                    elements.savedStreetsList.style.display = 'none';
+                } else {
+                    elements.currentStreetsList.innerHTML = streets.map(street => 
+                        `<div class="saved-street-item">${street}</div>`
+                    ).join('');
+                    elements.savedStreetsList.style.display = 'block';
+                }
+            }
         }
 
         function saveStreets() {
-            const streetsText = document.getElementById('streets').value.trim();
+            if (!appState.currentAreaId) {
+                showAlert('Selecione uma área primeiro.', 'warning');
+                return;
+            }
+            
+            const streetsText = elements.streets.value.trim();
             
             if (!streetsText) {
                 showAlert('Por favor, digite a ordem das ruas.', 'warning');
@@ -582,25 +878,34 @@
             }
             
             const streets = streetsText.split(',').filter(street => street.trim());
-            appState.streets = streets;
+            appState.areas[appState.currentAreaId].streets = streets;
             
-            saveStreetsToStorage();
-            updateStreetSelect();
+            saveAreasToStorage();
             updateSavedStreetsList();
+            updateAreaDependentInterfaces();
             
             showAlert(`Ordem das ruas salva com sucesso! (${streets.length} ruas)`, 'success');
-            
-            // Mostra a interface de entregas se havia ruas salvas anteriormente
-            if (appState.streets.length > 0) {
-                elements.noStreetsAlert.style.display = 'none';
-                elements.deliveryInterface.style.display = 'block';
-                elements.savedStreetsList.style.display = 'block';
+        }
+
+        // ========== GERENCIAMENTO DE ENTREGAS ==========
+
+        function updateStreetSelect() {
+            if (appState.currentAreaId && appState.areas[appState.currentAreaId]) {
+                const streets = appState.areas[appState.currentAreaId].streets;
+                elements.streetSelect.innerHTML = '<option value="">-- Selecione uma rua --</option>';
+                streets.forEach(street => {
+                    const option = document.createElement('option');
+                    option.value = street;
+                    option.textContent = street;
+                    elements.streetSelect.appendChild(option);
+                });
             }
         }
 
-        function addNumber() {
+        function addDelivery() {
             const street = elements.streetSelect.value;
             const number = elements.numberInput.value.trim();
+            const quantity = parseInt(elements.quantityInput.value) || 1;
             
             if (!street) {
                 showAlert('Por favor, selecione uma rua.', 'warning');
@@ -618,38 +923,56 @@
                 return;
             }
             
-            // Adiciona o número à lista de entregas
-            if (!appState.deliveries[street]) {
-                appState.deliveries[street] = [];
+            if (quantity < 1) {
+                showAlert('A quantidade deve ser pelo menos 1.', 'warning');
+                return;
             }
             
-            if (!appState.deliveries[street].includes(num)) {
-                appState.deliveries[street].push(num);
-                appState.deliveries[street].sort((a, b) => a - b);
-                updateDeliveriesList();
-                saveDeliveriesToStorage();
-            } else {
-                showAlert('Este número já foi adicionado para esta rua.', 'warning');
+            // Inicializa as entregas da área se não existir
+            if (!appState.deliveries[appState.currentAreaId]) {
+                appState.deliveries[appState.currentAreaId] = {};
             }
             
-            // Limpa o campo de número
+            // Inicializa a rua se não existir
+            if (!appState.deliveries[appState.currentAreaId][street]) {
+                appState.deliveries[appState.currentAreaId][street] = {};
+            }
+            
+            // Adiciona/atualiza o número
+            appState.deliveries[appState.currentAreaId][street][num] = quantity;
+            
+            updateDeliveriesList();
+            saveDeliveriesToStorage();
+            
+            // Limpa os campos
             elements.numberInput.value = '';
+            elements.quantityInput.value = '1';
             elements.numberInput.focus();
         }
 
-        function removeNumber(street, number) {
-            if (appState.deliveries[street]) {
-                appState.deliveries[street] = appState.deliveries[street].filter(n => n !== number);
-                if (appState.deliveries[street].length === 0) {
-                    delete appState.deliveries[street];
+        function removeDelivery(street, number) {
+            if (appState.deliveries[appState.currentAreaId] && 
+                appState.deliveries[appState.currentAreaId][street]) {
+                delete appState.deliveries[appState.currentAreaId][street][number];
+                
+                // Se não há mais números nesta rua, remove a rua
+                if (Object.keys(appState.deliveries[appState.currentAreaId][street]).length === 0) {
+                    delete appState.deliveries[appState.currentAreaId][street];
                 }
+                
+                // Se não há mais ruas nesta área, remove a área das entregas
+                if (Object.keys(appState.deliveries[appState.currentAreaId]).length === 0) {
+                    delete appState.deliveries[appState.currentAreaId];
+                }
+                
                 updateDeliveriesList();
                 saveDeliveriesToStorage();
             }
         }
 
         function updateDeliveriesList() {
-            if (Object.keys(appState.deliveries).length === 0) {
+            if (!appState.currentAreaId || !appState.deliveries[appState.currentAreaId] || 
+                Object.keys(appState.deliveries[appState.currentAreaId]).length === 0) {
                 elements.deliveriesList.innerHTML = `
                     <div class="empty-state">
                         <div>📭</div>
@@ -661,20 +984,28 @@
             }
             
             let html = '';
-            for (const [street, numbers] of Object.entries(appState.deliveries)) {
+            const areaDeliveries = appState.deliveries[appState.currentAreaId];
+            
+            for (const [street, numbers] of Object.entries(areaDeliveries)) {
+                const numberItems = Object.entries(numbers).map(([number, quantity]) => {
+                    const displayNumber = quantity > 1 ? `${number}²` : number;
+                    return `
+                        <span class="number-tag ${quantity > 1 ? 'multiple' : ''}">
+                            ${displayNumber}
+                            ${quantity > 1 ? `<span class="quantity">${quantity}</span>` : ''}
+                            <span class="remove" onclick="removeDelivery('${street}', ${number})">×</span>
+                        </span>
+                    `;
+                }).join('');
+                
                 html += `
                     <div class="delivery-item">
                         <div class="delivery-header">
                             <div class="delivery-street">${street}</div>
-                            <button class="btn btn-danger btn-sm" onclick="removeStreet('${street}')">🗑️ Remover</button>
+                            <button class="btn btn-danger btn-sm" onclick="removeStreetDeliveries('${street}')">🗑️ Limpar</button>
                         </div>
                         <div class="numbers-input">
-                            ${numbers.map(num => `
-                                <span class="number-tag">
-                                    ${num}
-                                    <span class="remove" onclick="removeNumber('${street}', ${num})">×</span>
-                                </span>
-                            `).join('')}
+                            ${numberItems}
                         </div>
                     </div>
                 `;
@@ -682,73 +1013,126 @@
             elements.deliveriesList.innerHTML = html;
         }
 
-        function removeStreet(street) {
-            delete appState.deliveries[street];
-            updateDeliveriesList();
-            saveDeliveriesToStorage();
+        function removeStreetDeliveries(street) {
+            if (appState.deliveries[appState.currentAreaId] && 
+                appState.deliveries[appState.currentAreaId][street]) {
+                delete appState.deliveries[appState.currentAreaId][street];
+                updateDeliveriesList();
+                saveDeliveriesToStorage();
+                showAlert(`Entregas da rua ${street} removidas!`, 'success');
+            }
         }
 
         function generateRoute() {
-            if (Object.keys(appState.deliveries).length === 0) {
+            if (!appState.currentAreaId || !appState.deliveries[appState.currentAreaId] || 
+                Object.keys(appState.deliveries[appState.currentAreaId]).length === 0) {
                 showAlert('Por favor, adicione pelo menos uma entrega.', 'warning');
                 return;
             }
             
             const optimizedRoute = [];
+            const areaStreets = appState.areas[appState.currentAreaId].streets;
+            const areaDeliveries = appState.deliveries[appState.currentAreaId];
             
             // Segue a ordem pré-definida das ruas
-            for (const street of appState.streets) {
-                if (appState.deliveries[street] && appState.deliveries[street].length > 0) {
-                    const numbersStr = appState.deliveries[street].join(', ');
+            for (const street of areaStreets) {
+                if (areaDeliveries[street] && Object.keys(areaDeliveries[street]).length > 0) {
+                    const numbers = Object.entries(areaDeliveries[street])
+                        .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                        .map(([number, quantity]) => {
+                            return quantity > 1 ? `${number}²` : number;
+                        });
+                    
+                    const numbersStr = numbers.join(', ');
                     optimizedRoute.push(`${street}, ${numbersStr}`);
                 }
             }
             
             // Adiciona ruas que não estão na ordem pré-definida
-            for (const street in appState.deliveries) {
-                if (!appState.streets.includes(street) && appState.deliveries[street].length > 0) {
-                    const numbersStr = appState.deliveries[street].join(', ');
+            for (const street in areaDeliveries) {
+                if (!areaStreets.includes(street) && Object.keys(areaDeliveries[street]).length > 0) {
+                    const numbers = Object.entries(areaDeliveries[street])
+                        .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                        .map(([number, quantity]) => {
+                            return quantity > 1 ? `${number}²` : number;
+                        });
+                    
+                    const numbersStr = numbers.join(', ');
                     optimizedRoute.push(`${street}, ${numbersStr}`);
                 }
             }
             
             displayRoute(optimizedRoute);
             
-            if (appState.streets.length === 0) {
+            if (areaStreets.length === 0) {
                 showAlert('⚠️ Nenhuma ordem de ruas foi configurada. As entregas serão listadas na ordem digitada.', 'warning');
             }
         }
 
         function displayRoute(route) {
-            const result = document.getElementById('result');
-            const routeList = document.getElementById('routeList');
-            
             if (route.length === 0) {
-                routeList.innerHTML = '<div class="route-item">Nenhuma entrega encontrada.</div>';
+                elements.routeList.innerHTML = '<div class="route-item">Nenhuma entrega encontrada.</div>';
             } else {
-                routeList.innerHTML = route.map(item => 
+                elements.routeList.innerHTML = route.map(item => 
                     `<div class="route-item">${item}</div>`
                 ).join('');
             }
             
-            result.style.display = 'block';
-            result.scrollIntoView({ behavior: 'smooth' });
+            elements.result.style.display = 'block';
+            elements.result.scrollIntoView({ behavior: 'smooth' });
         }
 
         function clearDeliveries() {
-            appState.deliveries = {};
-            updateDeliveriesList();
-            saveDeliveriesToStorage();
-            document.getElementById('result').style.display = 'none';
+            if (appState.currentAreaId && appState.deliveries[appState.currentAreaId]) {
+                delete appState.deliveries[appState.currentAreaId];
+                saveDeliveriesToStorage();
+                updateDeliveriesList();
+            }
+            elements.result.style.display = 'none';
             showAlert('Entregas limpas! Você pode começar uma nova rota.', 'success');
         }
 
+        // ========== FUNÇÕES GERAIS ==========
+
+        function switchTab(tabIndex) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.querySelectorAll('.tab')[tabIndex].classList.add('active');
+            document.querySelectorAll('.tab-content')[tabIndex].classList.add('active');
+
+            if (tabIndex === 1) {
+                loadSavedStreets();
+            } else if (tabIndex === 2) {
+                updateAreaDependentInterfaces();
+            } else if (tabIndex === 3) {
+                updateStorageStatus();
+            }
+        }
+
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.style.display = 'block';
+            
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
         function updateStorageStatus() {
-            const totalNumbers = Object.values(appState.deliveries).reduce((sum, numbers) => sum + numbers.length, 0);
+            const totalAreas = Object.keys(appState.areas).length;
+            const totalStreets = Object.values(appState.areas).reduce((sum, area) => sum + area.streets.length, 0);
+            const totalDeliveries = Object.values(appState.deliveries).reduce((sum, area) => {
+                return sum + Object.values(area).reduce((streetSum, numbers) => streetSum + Object.keys(numbers).length, 0);
+            }, 0);
+            
             const status = document.getElementById('storageStatus');
             status.innerHTML = `
-                <div>✅ Ruas salvas: ${appState.streets.length} ruas</div>
-                <div>📦 Entregas atuais: ${Object.keys(appState.deliveries).length} ruas / ${totalNumbers} endereços</div>
+                <div>🏘️ Áreas salvas: ${totalAreas}</div>
+                <div>🛣️ Ruas configuradas: ${totalStreets}</div>
+                <div>📦 Entregas totais: ${totalDeliveries}</div>
                 <div>💾 Dados salvos localmente no seu dispositivo</div>
                 <div>📱 Funciona offline</div>
             `;
@@ -756,12 +1140,15 @@
 
         function exportData() {
             const data = {
-                streets: appState.streets,
+                areas: appState.areas,
+                currentAreaId: appState.currentAreaId,
                 deliveries: appState.deliveries,
-                version: '2.0',
+                version: '3.0',
                 exportDate: new Date().toISOString(),
-                totalStreets: appState.streets.length,
-                totalDeliveries: Object.keys(appState.deliveries).length
+                totalAreas: Object.keys(appState.areas).length,
+                totalDeliveries: Object.values(appState.deliveries).reduce((sum, area) => {
+                    return sum + Object.values(area).reduce((streetSum, numbers) => streetSum + Object.keys(numbers).length, 0);
+                }, 0)
             };
             
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -769,7 +1156,7 @@
             
             const a = document.createElement('a');
             a.href = url;
-            a.download = `backup_rotas_${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `backup_rotas_areas_${new Date().toISOString().split('T')[0]}.json`;
             a.click();
             
             URL.revokeObjectURL(url);
@@ -787,25 +1174,25 @@
             reader.onload = function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
-                    if (data.streets && Array.isArray(data.streets)) {
-                        // Atualiza as ruas
-                        appState.streets = data.streets;
-                        if (data.deliveries) {
-                            appState.deliveries = data.deliveries;
-                        }
+                    if (data.areas && data.version >= '3.0') {
+                        // Importa os dados
+                        appState.areas = data.areas;
+                        appState.currentAreaId = data.currentAreaId;
+                        appState.deliveries = data.deliveries || {};
                         
-                        saveStreetsToStorage();
+                        // Salva no storage
+                        saveAreasToStorage();
                         saveDeliveriesToStorage();
                         
                         // Atualiza a interface
-                        updateStreetSelect();
-                        updateDeliveriesList();
-                        updateSavedStreetsList();
+                        updateAreasList();
+                        updateCurrentAreaBadge();
+                        updateAreaDependentInterfaces();
                         updateStorageStatus();
                         
-                        showAlert(`Dados importados com sucesso! ${data.streets.length} ruas e ${Object.keys(data.deliveries || {}).length} entregas carregadas.`, 'success');
+                        showAlert(`Dados importados com sucesso! ${Object.keys(data.areas).length} áreas carregadas.`, 'success');
                     } else {
-                        showAlert('Erro: Arquivo de backup inválido.', 'warning');
+                        showAlert('Erro: Arquivo de backup incompatível. Use backup da versão 3.0 ou superior.', 'warning');
                     }
                 } catch (error) {
                     showAlert('Erro ao ler arquivo de backup.', 'warning');
@@ -815,51 +1202,52 @@
         }
 
         function clearAllData() {
-            if (confirm('⚠️ TEM CERTEZA?\n\nIsso vai apagar TODOS os dados:\n• Ordem das ruas salvas\n• Todas as entregas atuais\n• Histórico\n\nEsta ação não pode ser desfeita.')) {
+            if (confirm('⚠️ TEM CERTEZA?\n\nIsso vai apagar TODOS os dados:\n• Todas as áreas\n• Todas as configurações de ruas\n• Todas as entregas\n\nEsta ação não pode ser desfeita.')) {
                 // Limpa o localStorage
-                localStorage.removeItem(STORAGE_KEYS.STREETS);
+                localStorage.removeItem(STORAGE_KEYS.AREAS);
+                localStorage.removeItem(STORAGE_KEYS.CURRENT_AREA);
                 localStorage.removeItem(STORAGE_KEYS.DELIVERIES);
                 
                 // Limpa o estado da aplicação
-                appState.streets = [];
+                appState.areas = {};
+                appState.currentAreaId = null;
                 appState.deliveries = {};
                 
                 // Atualiza a interface
-                updateStreetSelect();
-                updateDeliveriesList();
-                updateSavedStreetsList();
+                updateAreasList();
+                updateCurrentAreaBadge();
+                updateAreaDependentInterfaces();
                 updateStorageStatus();
                 
                 // Esconde resultados
-                document.getElementById('result').style.display = 'none';
-                
-                // Mostra alerta de configuração
-                elements.noStreetsAlert.style.display = 'block';
-                elements.deliveryInterface.style.display = 'none';
-                elements.savedStreetsList.style.display = 'none';
-                
-                // Limpa campos
-                document.getElementById('streets').value = '';
+                elements.result.style.display = 'none';
                 
                 showAlert('Todos os dados foram removidos com sucesso!', 'success');
             }
         }
 
-        // Tecla Enter no campo de número
+        // Tecla Enter nos campos de entrada
         elements.numberInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                addNumber();
+                addDelivery();
             }
         });
 
-        // Atualiza a rua atual quando selecionada
-        elements.streetSelect.addEventListener('change', function() {
-            appState.currentStreet = this.value;
+        elements.quantityInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addDelivery();
+            }
+        });
+
+        elements.newAreaName.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                createNewArea();
+            }
         });
 
         // Auto-save quando a página é fechada
         window.addEventListener('beforeunload', function() {
-            saveStreetsToStorage();
+            saveAreasToStorage();
             saveDeliveriesToStorage();
         });
     </script>

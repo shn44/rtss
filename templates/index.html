@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Otimizador de Rotas - Entregador</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        
+        .tab-container {
+            display: flex;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 5px;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        textarea, input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+        
+        textarea:focus, input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        textarea {
+            min-height: 120px;
+        }
+        
+        .instructions {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .instructions h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 5px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s ease;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-success {
+            background: #28a745;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+        }
+        
+        .btn-sm {
+            padding: 8px 15px;
+            font-size: 14px;
+            width: auto;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .result h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .route-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            font-family: monospace;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .delivery-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            transition: border-color 0.3s ease;
+        }
+        
+        .delivery-item:hover {
+            border-color: #667eea;
+        }
+        
+        .delivery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .delivery-street {
+            font-weight: bold;
+            color: #333;
+            flex: 1;
+        }
+        
+        .numbers-input {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .number-tag {
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+        }
+        
+        .number-tag .remove {
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .number-input-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .number-input {
+            flex: 1;
+            max-width: 120px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        .storage-info {
+            background: #e7f3ff;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .delivery-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .street-selector {
+            margin-bottom: 15px;
+        }
+
+        .selected-streets {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚚 Otimizador de Rotas - Entregador</h1>
+        
+        <div class="tab-container">
+            <button class="tab active" onclick="switchTab(0)">📍 Configurar Ruas</button>
+            <button class="tab" onclick="switchTab(1)">📦 Fazer Entregas</button>
+            <button class="tab" onclick="switchTab(2)">⚙️ Gerenciar</button>
+        </div>
+        
+        <div id="alert" class="alert"></div>
+        
+        <!-- Tab 1: Configurar Ordem das Ruas -->
+        <div class="tab-content active" id="tab1">
+            <div class="instructions">
+                <h3>Como configurar a ordem das ruas:</h3>
+                <ul>
+                    <li>Digite as ruas na ordem que você normalmente percorre</li>
+                    <li>Separe cada rua por vírgula</li>
+                    <li>Os dados são salvos automaticamente</li>
+                    <li>Exemplo: <em>Rua A, Rua B, Rua C, Avenida Principal</em></li>
+                </ul>
+            </div>
+            
+            <div class="form-group">
+                <label for="streets">Ordem das Ruas (separadas por vírgula):</label>
+                <textarea id="streets" placeholder="Exemplo: Rua A, Rua B, Rua C, Avenida Principal"></textarea>
+            </div>
+            
+            <button class="btn" onclick="saveStreets()">💾 Salvar Ordem das Ruas</button>
+        </div>
+        
+        <!-- Tab 2: Fazer Entregas -->
+        <div class="tab-content" id="tab2">
+            <div class="instructions">
+                <h3>Como adicionar entregas:</h3>
+                <ul>
+                    <li>Selecione uma rua da sua lista pré-salvada</li>
+                    <li>Digite os números das casas para entregar</li>
+                    <li>Clique em "Adicionar Número" para cada endereço</li>
+                    <li>Repita para todas as ruas com entregas</li>
+                </ul>
+            </div>
+
+            <div id="noStreetsAlert" class="alert alert-warning" style="display: none;">
+                ⚠️ Você precisa configurar as ruas primeiro na aba "Configurar Ruas"
+            </div>
+
+            <div id="deliveryInterface" style="display: none;">
+                <div class="street-selector">
+                    <label for="streetSelect">Selecione uma rua:</label>
+                    <select id="streetSelect">
+                        <option value="">-- Selecione uma rua --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="numberInput">Número da residência:</label>
+                    <div class="number-input-group">
+                        <input type="number" id="numberInput" placeholder="Ex: 123" class="number-input">
+                        <button class="btn btn-success btn-sm" onclick="addNumber()">➕ Adicionar Número</button>
+                    </div>
+                </div>
+
+                <div class="selected-streets">
+                    <h3>📍 Entregas Adicionadas:</h3>
+                    <div id="deliveriesList"></div>
+                </div>
+
+                <button class="btn" onclick="generateRoute()">🚀 Gerar Rota Otimizada</button>
+            </div>
+            
+            <div class="result" id="result">
+                <h3>📋 Rota Otimizada:</h3>
+                <div id="routeList"></div>
+                <button class="btn btn-secondary" onclick="clearDeliveries()" style="margin-top: 15px;">🔄 Nova Rota</button>
+            </div>
+        </div>
+
+        <!-- Tab 3: Gerenciar Dados -->
+        <div class="tab-content" id="tab3">
+            <div class="instructions">
+                <h3>Gerenciar dados salvos:</h3>
+                <p>Aqui você pode visualizar, exportar ou limpar os dados salvos.</p>
+            </div>
+
+            <div class="storage-info">
+                <strong>Status do Armazenamento:</strong>
+                <div id="storageStatus">Carregando...</div>
+            </div>
+
+            <button class="btn" onclick="exportData()">📥 Exportar Dados</button>
+            <button class="btn btn-secondary" onclick="importData()">📤 Importar Dados</button>
+            <button class="btn btn-danger" onclick="clearData()">🗑️ Limpar Todos os Dados</button>
+
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleFileImport(this.files[0])">
+        </div>
+    </div>
+
+    <script>
+        // Estado da aplicação
+        const appState = {
+            streets: [],
+            deliveries: {},
+            currentStreet: ''
+        };
+
+        // Elementos DOM
+        const elements = {
+            streetSelect: document.getElementById('streetSelect'),
+            numberInput: document.getElementById('numberInput'),
+            deliveriesList: document.getElementById('deliveriesList'),
+            noStreetsAlert: document.getElementById('noStreetsAlert'),
+            deliveryInterface: document.getElementById('deliveryInterface')
+        };
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStreets();
+            updateStorageStatus();
+        });
+
+        function switchTab(tabIndex) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.querySelectorAll('.tab')[tabIndex].classList.add('active');
+            document.querySelectorAll('.tab-content')[tabIndex].classList.add('active');
+
+            if (tabIndex === 0) {
+                loadSavedStreets();
+            } else if (tabIndex === 1) {
+                loadStreets();
+            } else if (tabIndex === 2) {
+                updateStorageStatus();
+            }
+        }
+
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.style.display = 'block';
+            
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        // Carrega as ruas salvas
+        async function loadStreets() {
+            try {
+                const response = await fetch('/get_streets');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    appState.streets = data.streets;
+                    updateStreetSelect();
+                    
+                    if (appState.streets.length === 0) {
+                        elements.noStreetsAlert.style.display = 'block';
+                        elements.deliveryInterface.style.display = 'none';
+                    } else {
+                        elements.noStreetsAlert.style.display = 'none';
+                        elements.deliveryInterface.style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao carregar ruas:', error);
+            }
+        }
+
+        function updateStreetSelect() {
+            elements.streetSelect.innerHTML = '<option value="">-- Selecione uma rua --</option>';
+            appState.streets.forEach(street => {
+                const option = document.createElement('option');
+                option.value = street;
+                option.textContent = street;
+                elements.streetSelect.appendChild(option);
+            });
+        }
+
+        function loadSavedStreets() {
+            document.getElementById('streets').value = appState.streets.join(', ');
+        }
+
+        async function saveStreets() {
+            const streetsText = document.getElementById('streets').value.trim();
+            
+            if (!streetsText) {
+                showAlert('Por favor, digite a ordem das ruas.', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/save_streets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ streets: streetsText })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    appState.streets = data.streets;
+                    showAlert('Ordem das ruas salva com sucesso!', 'success');
+                    loadStreets(); // Atualiza a lista na aba de entregas
+                }
+            } catch (error) {
+                showAlert('Erro ao salvar as ruas.', 'warning');
+                console.error('Error:', error);
+            }
+        }
+
+        function addNumber() {
+            const street = elements.streetSelect.value;
+            const number = elements.numberInput.value.trim();
+            
+            if (!street) {
+                showAlert('Por favor, selecione uma rua.', 'warning');
+                return;
+            }
+            
+            if (!number) {
+                showAlert('Por favor, digite um número.', 'warning');
+                return;
+            }
+            
+            const num = parseInt(number);
+            if (isNaN(num)) {
+                showAlert('Por favor, digite um número válido.', 'warning');
+                return;
+            }
+            
+            // Adiciona o número à lista de entregas
+            if (!appState.deliveries[street]) {
+                appState.deliveries[street] = [];
+            }
+            
+            if (!appState.deliveries[street].includes(num)) {
+                appState.deliveries[street].push(num);
+                appState.deliveries[street].sort((a, b) => a - b);
+                updateDeliveriesList();
+            } else {
+                showAlert('Este número já foi adicionado para esta rua.', 'warning');
+            }
+            
+            // Limpa o campo de número
+            elements.numberInput.value = '';
+            elements.numberInput.focus();
+        }
+
+        function removeNumber(street, number) {
+            if (appState.deliveries[street]) {
+                appState.deliveries[street] = appState.deliveries[street].filter(n => n !== number);
+                if (appState.deliveries[street].length === 0) {
+                    delete appState.deliveries[street];
+                }
+                updateDeliveriesList();
+            }
+        }
+
+        function updateDeliveriesList() {
+            if (Object.keys(appState.deliveries).length === 0) {
+                elements.deliveriesList.innerHTML = `
+                    <div class="empty-state">
+                        <div>📭</div>
+                        <p>Nenhuma entrega adicionada</p>
+                        <small>Selecione uma rua e adicione os números das residências</small>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            for (const [street, numbers] of Object.entries(appState.deliveries)) {
+                html += `
+                    <div class="delivery-item">
+                        <div class="delivery-header">
+                            <div class="delivery-street">${street}</div>
+                            <button class="btn btn-danger btn-sm" onclick="removeStreet('${street}')">🗑️ Remover</button>
+                        </div>
+                        <div class="numbers-input">
+                            ${numbers.map(num => `
+                                <span class="number-tag">
+                                    ${num}
+                                    <span class="remove" onclick="removeNumber('${street}', ${num})">×</span>
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            elements.deliveriesList.innerHTML = html;
+        }
+
+        function removeStreet(street) {
+            delete appState.deliveries[street];
+            updateDeliveriesList();
+        }
+
+        async function generateRoute() {
+            if (Object.keys(appState.deliveries).length === 0) {
+                showAlert('Por favor, adicione pelo menos uma entrega.', 'warning');
+                return;
+            }
+            
+            // Converte os dados para o formato esperado pelo backend
+            const deliveriesData = Object.entries(appState.deliveries).map(([street, numbers]) => ({
+                street: street,
+                numbers: numbers
+            }));
+            
+            try {
+                const response = await fetch('/generate_route', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ deliveries: deliveriesData })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    displayRoute(data.route);
+                    if (!data.streets_saved) {
+                        showAlert('⚠️ Nenhuma ordem de ruas foi configurada. As entregas serão listadas na ordem digitada.', 'warning');
+                    }
+                } else {
+                    showAlert('Erro ao gerar rota: ' + data.message, 'warning');
+                }
+            } catch (error) {
+                showAlert('Erro ao gerar a rota.', 'warning');
+                console.error('Error:', error);
+            }
+        }
+
+        function displayRoute(route) {
+            const result = document.getElementById('result');
+            const routeList = document.getElementById('routeList');
+            
+            if (route.length === 0) {
+                routeList.innerHTML = '<div class="route-item">Nenhuma entrega encontrada.</div>';
+            } else {
+                routeList.innerHTML = route.map(item => 
+                    `<div class="route-item">${item}</div>`
+                ).join('');
+            }
+            
+            result.style.display = 'block';
+            result.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function clearDeliveries() {
+            appState.deliveries = {};
+            updateDeliveriesList();
+            document.getElementById('result').style.display = 'none';
+        }
+
+        function updateStorageStatus() {
+            const status = document.getElementById('storageStatus');
+            status.innerHTML = `
+                <div>✅ Ruas salvas: ${appState.streets.length} ruas</div>
+                <div>📦 Entregas atuais: ${Object.keys(appState.deliveries).length} ruas</div>
+                <div>💾 Dados salvos no servidor</div>
+            `;
+        }
+
+        function exportData() {
+            const data = {
+                streets: appState.streets,
+                deliveries: appState.deliveries,
+                version: '2.0',
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `rota_entregador_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            
+            URL.revokeObjectURL(url);
+            showAlert('Dados exportados com sucesso!', 'success');
+        }
+
+        function importData() {
+            document.getElementById('importFile').click();
+        }
+
+        function handleFileImport(file) {
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.streets && Array.isArray(data.streets)) {
+                        // Atualiza as ruas no servidor
+                        document.getElementById('streets').value = data.streets.join(', ');
+                        saveStreets().then(() => {
+                            if (data.deliveries) {
+                                appState.deliveries = data.deliveries;
+                                updateDeliveriesList();
+                            }
+                            showAlert('Dados importados com sucesso!', 'success');
+                            updateStorageStatus();
+                        });
+                    } else {
+                        showAlert('Erro: Arquivo inválido.', 'warning');
+                    }
+                } catch (error) {
+                    showAlert('Erro ao ler arquivo.', 'warning');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearData() {
+            if (confirm('Tem certeza que deseja limpar TODOS os dados? Esta ação não pode ser desfeita.')) {
+                appState.streets = [];
+                appState.deliveries = {};
+                document.getElementById('streets').value = '';
+                updateDeliveriesList();
+                updateStorageStatus();
+                
+                // Limpa no servidor também
+                fetch('/save_streets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ streets: '' })
+                });
+                
+                showAlert('Todos os dados foram removidos.', 'success');
+            }
+        }
+
+        // Tecla Enter no campo de número
+        elements.numberInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addNumber();
+            }
+        });
+
+        // Atualiza a rua atual quando selecionada
+        elements.streetSelect.addEventListener('change', function() {
+            appState.currentStreet = this.value;
+        });
+    </script>
+</body>
+</html>

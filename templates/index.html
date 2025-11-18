@@ -286,18 +286,27 @@
             font-size: 14px;
         }
 
-        .delivery-controls {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
         .street-selector {
             margin-bottom: 15px;
         }
 
         .selected-streets {
             margin-top: 20px;
+        }
+
+        .saved-streets-list {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .saved-street-item {
+            background: white;
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            border-left: 3px solid #28a745;
         }
     </style>
 </head>
@@ -308,7 +317,7 @@
         <div class="tab-container">
             <button class="tab active" onclick="switchTab(0)">📍 Configurar Ruas</button>
             <button class="tab" onclick="switchTab(1)">📦 Fazer Entregas</button>
-            <button class="tab" onclick="switchTab(2)">⚙️ Gerenciar</button>
+            <button class="tab" onclick="switchTab(2)">💾 Dados Salvos</button>
         </div>
         
         <div id="alert" class="alert"></div>
@@ -320,7 +329,7 @@
                 <ul>
                     <li>Digite as ruas na ordem que você normalmente percorre</li>
                     <li>Separe cada rua por vírgula</li>
-                    <li>Os dados são salvos automaticamente</li>
+                    <li>Os dados são salvos automaticamente no seu celular</li>
                     <li>Exemplo: <em>Rua A, Rua B, Rua C, Avenida Principal</em></li>
                 </ul>
             </div>
@@ -331,6 +340,11 @@
             </div>
             
             <button class="btn" onclick="saveStreets()">💾 Salvar Ordem das Ruas</button>
+
+            <div class="saved-streets-list" id="savedStreetsList" style="display: none;">
+                <h4>🔄 Ruas Salvas Atualmente:</h4>
+                <div id="currentStreetsList"></div>
+            </div>
         </div>
         
         <!-- Tab 2: Fazer Entregas -->
@@ -380,27 +394,44 @@
             </div>
         </div>
 
-        <!-- Tab 3: Gerenciar Dados -->
+        <!-- Tab 3: Dados Salvos -->
         <div class="tab-content" id="tab3">
             <div class="instructions">
-                <h3>Gerenciar dados salvos:</h3>
-                <p>Aqui você pode visualizar, exportar ou limpar os dados salvos.</p>
+                <h3>Seus dados salvos localmente:</h3>
+                <p>Todos os dados ficam armazenados no seu próprio celular/computador.</p>
             </div>
 
             <div class="storage-info">
-                <strong>Status do Armazenamento:</strong>
+                <strong>📊 Status do Armazenamento Local:</strong>
                 <div id="storageStatus">Carregando...</div>
             </div>
 
-            <button class="btn" onclick="exportData()">📥 Exportar Dados</button>
-            <button class="btn btn-secondary" onclick="importData()">📤 Importar Dados</button>
-            <button class="btn btn-danger" onclick="clearData()">🗑️ Limpar Todos os Dados</button>
+            <div class="form-group">
+                <label>Exportar dados para backup:</label>
+                <button class="btn" onclick="exportData()">📥 Exportar Dados</button>
+            </div>
 
-            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleFileImport(this.files[0])">
+            <div class="form-group">
+                <label>Importar dados de backup:</label>
+                <button class="btn btn-secondary" onclick="importData()">📤 Importar Dados</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleFileImport(this.files[0])">
+            </div>
+
+            <div class="form-group">
+                <label>Limpar todos os dados:</label>
+                <button class="btn btn-danger" onclick="clearAllData()">🗑️ Limpar Todos os Dados</button>
+            </div>
         </div>
     </div>
 
     <script>
+        // Chaves para localStorage
+        const STORAGE_KEYS = {
+            STREETS: 'route_optimizer_streets',
+            DELIVERIES: 'route_optimizer_deliveries',
+            SETTINGS: 'route_optimizer_settings'
+        };
+
         // Estado da aplicação
         const appState = {
             streets: [],
@@ -414,14 +445,80 @@
             numberInput: document.getElementById('numberInput'),
             deliveriesList: document.getElementById('deliveriesList'),
             noStreetsAlert: document.getElementById('noStreetsAlert'),
-            deliveryInterface: document.getElementById('deliveryInterface')
+            deliveryInterface: document.getElementById('deliveryInterface'),
+            savedStreetsList: document.getElementById('savedStreetsList'),
+            currentStreetsList: document.getElementById('currentStreetsList')
         };
 
         // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
-            loadStreets();
+            loadAllData();
             updateStorageStatus();
         });
+
+        // ========== FUNÇÕES DE GERENCIAMENTO DE DADOS ==========
+
+        function loadAllData() {
+            loadStreets();
+            loadDeliveries();
+        }
+
+        function loadStreets() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEYS.STREETS);
+                if (saved) {
+                    appState.streets = JSON.parse(saved);
+                    updateStreetSelect();
+                    updateSavedStreetsList();
+                    
+                    if (appState.streets.length === 0) {
+                        elements.noStreetsAlert.style.display = 'block';
+                        elements.deliveryInterface.style.display = 'none';
+                        elements.savedStreetsList.style.display = 'none';
+                    } else {
+                        elements.noStreetsAlert.style.display = 'none';
+                        elements.deliveryInterface.style.display = 'block';
+                        elements.savedStreetsList.style.display = 'block';
+                    }
+                } else {
+                    elements.noStreetsAlert.style.display = 'block';
+                    elements.deliveryInterface.style.display = 'none';
+                    elements.savedStreetsList.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Erro ao carregar ruas:', error);
+            }
+        }
+
+        function loadDeliveries() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEYS.DELIVERIES);
+                if (saved) {
+                    appState.deliveries = JSON.parse(saved);
+                    updateDeliveriesList();
+                }
+            } catch (error) {
+                console.error('Erro ao carregar entregas:', error);
+            }
+        }
+
+        function saveStreetsToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.STREETS, JSON.stringify(appState.streets));
+            } catch (error) {
+                console.error('Erro ao salvar ruas:', error);
+            }
+        }
+
+        function saveDeliveriesToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.DELIVERIES, JSON.stringify(appState.deliveries));
+            } catch (error) {
+                console.error('Erro ao salvar entregas:', error);
+            }
+        }
+
+        // ========== FUNÇÕES DA INTERFACE ==========
 
         function switchTab(tabIndex) {
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
@@ -450,29 +547,6 @@
             }, 5000);
         }
 
-        // Carrega as ruas salvas
-        async function loadStreets() {
-            try {
-                const response = await fetch('/get_streets');
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    appState.streets = data.streets;
-                    updateStreetSelect();
-                    
-                    if (appState.streets.length === 0) {
-                        elements.noStreetsAlert.style.display = 'block';
-                        elements.deliveryInterface.style.display = 'none';
-                    } else {
-                        elements.noStreetsAlert.style.display = 'none';
-                        elements.deliveryInterface.style.display = 'block';
-                    }
-                }
-            } catch (error) {
-                console.error('Erro ao carregar ruas:', error);
-            }
-        }
-
         function updateStreetSelect() {
             elements.streetSelect.innerHTML = '<option value="">-- Selecione uma rua --</option>';
             appState.streets.forEach(street => {
@@ -483,11 +557,23 @@
             });
         }
 
-        function loadSavedStreets() {
-            document.getElementById('streets').value = appState.streets.join(', ');
+        function updateSavedStreetsList() {
+            if (appState.streets.length === 0) {
+                elements.currentStreetsList.innerHTML = '<p>Nenhuma rua salva</p>';
+                return;
+            }
+            
+            elements.currentStreetsList.innerHTML = appState.streets.map(street => 
+                `<div class="saved-street-item">${street}</div>`
+            ).join('');
         }
 
-        async function saveStreets() {
+        function loadSavedStreets() {
+            document.getElementById('streets').value = appState.streets.join(', ');
+            updateSavedStreetsList();
+        }
+
+        function saveStreets() {
             const streetsText = document.getElementById('streets').value.trim();
             
             if (!streetsText) {
@@ -495,25 +581,20 @@
                 return;
             }
             
-            try {
-                const response = await fetch('/save_streets', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ streets: streetsText })
-                });
-                
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    appState.streets = data.streets;
-                    showAlert('Ordem das ruas salva com sucesso!', 'success');
-                    loadStreets(); // Atualiza a lista na aba de entregas
-                }
-            } catch (error) {
-                showAlert('Erro ao salvar as ruas.', 'warning');
-                console.error('Error:', error);
+            const streets = streetsText.split(',').filter(street => street.trim());
+            appState.streets = streets;
+            
+            saveStreetsToStorage();
+            updateStreetSelect();
+            updateSavedStreetsList();
+            
+            showAlert(`Ordem das ruas salva com sucesso! (${streets.length} ruas)`, 'success');
+            
+            // Mostra a interface de entregas se havia ruas salvas anteriormente
+            if (appState.streets.length > 0) {
+                elements.noStreetsAlert.style.display = 'none';
+                elements.deliveryInterface.style.display = 'block';
+                elements.savedStreetsList.style.display = 'block';
             }
         }
 
@@ -546,6 +627,7 @@
                 appState.deliveries[street].push(num);
                 appState.deliveries[street].sort((a, b) => a - b);
                 updateDeliveriesList();
+                saveDeliveriesToStorage();
             } else {
                 showAlert('Este número já foi adicionado para esta rua.', 'warning');
             }
@@ -562,6 +644,7 @@
                     delete appState.deliveries[street];
                 }
                 updateDeliveriesList();
+                saveDeliveriesToStorage();
             }
         }
 
@@ -602,42 +685,37 @@
         function removeStreet(street) {
             delete appState.deliveries[street];
             updateDeliveriesList();
+            saveDeliveriesToStorage();
         }
 
-        async function generateRoute() {
+        function generateRoute() {
             if (Object.keys(appState.deliveries).length === 0) {
                 showAlert('Por favor, adicione pelo menos uma entrega.', 'warning');
                 return;
             }
             
-            // Converte os dados para o formato esperado pelo backend
-            const deliveriesData = Object.entries(appState.deliveries).map(([street, numbers]) => ({
-                street: street,
-                numbers: numbers
-            }));
+            const optimizedRoute = [];
             
-            try {
-                const response = await fetch('/generate_route', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ deliveries: deliveriesData })
-                });
-                
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    displayRoute(data.route);
-                    if (!data.streets_saved) {
-                        showAlert('⚠️ Nenhuma ordem de ruas foi configurada. As entregas serão listadas na ordem digitada.', 'warning');
-                    }
-                } else {
-                    showAlert('Erro ao gerar rota: ' + data.message, 'warning');
+            // Segue a ordem pré-definida das ruas
+            for (const street of appState.streets) {
+                if (appState.deliveries[street] && appState.deliveries[street].length > 0) {
+                    const numbersStr = appState.deliveries[street].join(', ');
+                    optimizedRoute.push(`${street}, ${numbersStr}`);
                 }
-            } catch (error) {
-                showAlert('Erro ao gerar a rota.', 'warning');
-                console.error('Error:', error);
+            }
+            
+            // Adiciona ruas que não estão na ordem pré-definida
+            for (const street in appState.deliveries) {
+                if (!appState.streets.includes(street) && appState.deliveries[street].length > 0) {
+                    const numbersStr = appState.deliveries[street].join(', ');
+                    optimizedRoute.push(`${street}, ${numbersStr}`);
+                }
+            }
+            
+            displayRoute(optimizedRoute);
+            
+            if (appState.streets.length === 0) {
+                showAlert('⚠️ Nenhuma ordem de ruas foi configurada. As entregas serão listadas na ordem digitada.', 'warning');
             }
         }
 
@@ -660,15 +738,19 @@
         function clearDeliveries() {
             appState.deliveries = {};
             updateDeliveriesList();
+            saveDeliveriesToStorage();
             document.getElementById('result').style.display = 'none';
+            showAlert('Entregas limpas! Você pode começar uma nova rota.', 'success');
         }
 
         function updateStorageStatus() {
+            const totalNumbers = Object.values(appState.deliveries).reduce((sum, numbers) => sum + numbers.length, 0);
             const status = document.getElementById('storageStatus');
             status.innerHTML = `
                 <div>✅ Ruas salvas: ${appState.streets.length} ruas</div>
-                <div>📦 Entregas atuais: ${Object.keys(appState.deliveries).length} ruas</div>
-                <div>💾 Dados salvos no servidor</div>
+                <div>📦 Entregas atuais: ${Object.keys(appState.deliveries).length} ruas / ${totalNumbers} endereços</div>
+                <div>💾 Dados salvos localmente no seu dispositivo</div>
+                <div>📱 Funciona offline</div>
             `;
         }
 
@@ -677,7 +759,9 @@
                 streets: appState.streets,
                 deliveries: appState.deliveries,
                 version: '2.0',
-                exportDate: new Date().toISOString()
+                exportDate: new Date().toISOString(),
+                totalStreets: appState.streets.length,
+                totalDeliveries: Object.keys(appState.deliveries).length
             };
             
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -685,11 +769,11 @@
             
             const a = document.createElement('a');
             a.href = url;
-            a.download = `rota_entregador_${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `backup_rotas_${new Date().toISOString().split('T')[0]}.json`;
             a.click();
             
             URL.revokeObjectURL(url);
-            showAlert('Dados exportados com sucesso!', 'success');
+            showAlert('Backup exportado com sucesso!', 'success');
         }
 
         function importData() {
@@ -704,44 +788,60 @@
                 try {
                     const data = JSON.parse(e.target.result);
                     if (data.streets && Array.isArray(data.streets)) {
-                        // Atualiza as ruas no servidor
-                        document.getElementById('streets').value = data.streets.join(', ');
-                        saveStreets().then(() => {
-                            if (data.deliveries) {
-                                appState.deliveries = data.deliveries;
-                                updateDeliveriesList();
-                            }
-                            showAlert('Dados importados com sucesso!', 'success');
-                            updateStorageStatus();
-                        });
+                        // Atualiza as ruas
+                        appState.streets = data.streets;
+                        if (data.deliveries) {
+                            appState.deliveries = data.deliveries;
+                        }
+                        
+                        saveStreetsToStorage();
+                        saveDeliveriesToStorage();
+                        
+                        // Atualiza a interface
+                        updateStreetSelect();
+                        updateDeliveriesList();
+                        updateSavedStreetsList();
+                        updateStorageStatus();
+                        
+                        showAlert(`Dados importados com sucesso! ${data.streets.length} ruas e ${Object.keys(data.deliveries || {}).length} entregas carregadas.`, 'success');
                     } else {
-                        showAlert('Erro: Arquivo inválido.', 'warning');
+                        showAlert('Erro: Arquivo de backup inválido.', 'warning');
                     }
                 } catch (error) {
-                    showAlert('Erro ao ler arquivo.', 'warning');
+                    showAlert('Erro ao ler arquivo de backup.', 'warning');
                 }
             };
             reader.readAsText(file);
         }
 
-        function clearData() {
-            if (confirm('Tem certeza que deseja limpar TODOS os dados? Esta ação não pode ser desfeita.')) {
+        function clearAllData() {
+            if (confirm('⚠️ TEM CERTEZA?\n\nIsso vai apagar TODOS os dados:\n• Ordem das ruas salvas\n• Todas as entregas atuais\n• Histórico\n\nEsta ação não pode ser desfeita.')) {
+                // Limpa o localStorage
+                localStorage.removeItem(STORAGE_KEYS.STREETS);
+                localStorage.removeItem(STORAGE_KEYS.DELIVERIES);
+                
+                // Limpa o estado da aplicação
                 appState.streets = [];
                 appState.deliveries = {};
-                document.getElementById('streets').value = '';
+                
+                // Atualiza a interface
+                updateStreetSelect();
                 updateDeliveriesList();
+                updateSavedStreetsList();
                 updateStorageStatus();
                 
-                // Limpa no servidor também
-                fetch('/save_streets', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ streets: '' })
-                });
+                // Esconde resultados
+                document.getElementById('result').style.display = 'none';
                 
-                showAlert('Todos os dados foram removidos.', 'success');
+                // Mostra alerta de configuração
+                elements.noStreetsAlert.style.display = 'block';
+                elements.deliveryInterface.style.display = 'none';
+                elements.savedStreetsList.style.display = 'none';
+                
+                // Limpa campos
+                document.getElementById('streets').value = '';
+                
+                showAlert('Todos os dados foram removidos com sucesso!', 'success');
             }
         }
 
@@ -755,6 +855,12 @@
         // Atualiza a rua atual quando selecionada
         elements.streetSelect.addEventListener('change', function() {
             appState.currentStreet = this.value;
+        });
+
+        // Auto-save quando a página é fechada
+        window.addEventListener('beforeunload', function() {
+            saveStreetsToStorage();
+            saveDeliveriesToStorage();
         });
     </script>
 </body>
